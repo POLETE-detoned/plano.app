@@ -1,0 +1,26 @@
+name: processor
+
+on:
+  push:
+    paths: ["processor/**", ".github/workflows/processor.yml"]
+  pull_request:
+    paths: ["processor/**", ".github/workflows/processor.yml"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: processor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e '.[dev]'
+      - run: pytest -q
+      - name: Smoke test CLI
+        run: |
+          plano sample /tmp/muestra.plano
+          plano info /tmp/muestra.plano
+          plano dxf /tmp/muestra.plano -o /tmp/muestra.dxf
