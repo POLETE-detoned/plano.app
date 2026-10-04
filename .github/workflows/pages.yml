@@ -1,7 +1,7 @@
 name: pages
 
-# Publica el prototipo web (carpeta web/) en GitHub Pages.
-# Requiere activar Pages una vez: Settings → Pages → Source: GitHub Actions.
+# Publica el prototipo web (carpeta web/) en GitHub Pages copiándolo a la rama gh-pages,
+# que es la fuente de Pages del repositorio: https://polete-detoned.github.io/plano.app/
 on:
   push:
     branches: [main]
@@ -9,9 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -20,14 +18,17 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: web
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Copiar web/ a gh-pages
+        run: |
+          mkdir site
+          cp -R web/. site/
+          touch site/.nojekyll
+          cd site
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "Publicar prototipo web (${GITHUB_SHA::7})"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
