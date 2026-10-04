@@ -1,0 +1,24 @@
+name: ios
+
+on:
+  push:
+    paths: ["ios/**", ".github/workflows/ios.yml"]
+  pull_request:
+    paths: ["ios/**", ".github/workflows/ios.yml"]
+
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen
+      - name: Build (sin firma, dispositivo genérico)
+        run: |
+          xcodebuild -project Plano.xcodeproj -scheme Plano \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO build | tail -n 200
+          exit ${PIPESTATUS[0]}
