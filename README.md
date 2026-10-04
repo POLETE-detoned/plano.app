@@ -10,8 +10,8 @@ todo se procesa en el móvil y en tu ordenador.
 | Procesador de escritorio | [`processor/`](processor) | Python 3.11, ezdxf (IfcOpenShell en semana 5-6) |
 | Contrato entre ambas | [`docs/FORMATO_PLANO.md`](docs/FORMATO_PLANO.md) | paquete `.plano` (ZIP) |
 
-Prototipo web navegable (6 pantallas y secuencias de motion): [`web/index.html`](web/index.html),
-publicado con GitHub Pages por el workflow `pages.yml`.
+Prototipo web navegable (6 pantallas y secuencias de motion): **https://polete-detoned.github.io/plano.app/**
+(código en [`web/index.html`](web/index.html); el workflow `pages.yml` lo copia a la rama `gh-pages`).
 
 Documentación: [brief](docs/BRIEF.md) · [plan y estado](docs/PLAN.md) · [diseño y motion](docs/DISENO.md).
 
