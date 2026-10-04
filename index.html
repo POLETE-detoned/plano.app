@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plano · prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+/* Layout: panel de contexto a la izquierda, teléfono a la derecha; en móvil, teléfono a ancho completo y panel debajo. */
+:root {
+  --ink: #0B0D10;
+  --paper: #F2F0EA;
+  --signal: #FF5A1F;
+  --bg: #0B0D10;
+  --fg: #F2F0EA;
+  --line: rgba(242, 240, 234, .9);
+  --muted: rgba(242, 240, 234, .56);
+  --hair: rgba(242, 240, 234, .14);
+  --mesh: rgba(255, 90, 31, .4);
+  --bezel: #1A1D22;
+  --screen: #0B0D10;
+  --grotesk: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --enter: cubic-bezier(.22, 1, .36, 1);
+  --exit: cubic-bezier(.64, 0, .78, 0);
+  --ramp: cubic-bezier(.12, .9, .2, 1);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #F2F0EA; --fg: #0B0D10; --line: rgba(11, 13, 16, .9); --muted: rgba(11, 13, 16, .56);
+    --hair: rgba(11, 13, 16, .14); --bezel: #D9D6CC; --screen: #F2F0EA; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #F2F0EA; --fg: #0B0D10; --line: rgba(11, 13, 16, .9); --muted: rgba(11, 13, 16, .56);
+  --hair: rgba(11, 13, 16, .14); --bezel: #D9D6CC; --screen: #F2F0EA; color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--grotesk); font-size: 15px; line-height: 1.5; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+.wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 48px; align-items: start;
+  max-width: 1080px; margin: 0 auto; padding-block: 40px; padding-inline: 24px; }
+@media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-block: 16px; padding-inline: 16px; } .phone-col { order: -1; } }
+
+/* Panel de contexto */
+.panel { min-width: 0; max-width: 34rem; display: grid; gap: 28px; padding-top: 24px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.panel h1 { margin: 0; font-size: clamp(48px, 9vw, 88px); line-height: .9; letter-spacing: -.02em; font-weight: 700; text-transform: uppercase; }
+.panel h1 span { color: var(--signal); }
+.panel p { margin: 0; color: var(--muted); max-width: 60ch; }
+.panel p strong { color: var(--fg); font-weight: 500; }
+.jump { display: flex; flex-wrap: wrap; gap: 8px; }
+.jump button { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+  padding: 8px 12px; border: 1px solid var(--hair); }
+.jump button[aria-current="true"] { border-color: var(--signal); color: var(--signal); }
+.facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 20px; margin: 0; font-size: 14px; }
+.facts dt { font-family: var(--mono); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding-top: 2px; }
+.facts dd { margin: 0; }
+.panel a { color: var(--fg); text-decoration-color: var(--signal); text-underline-offset: 3px; }
+
+/* Teléfono */
+.phone-col { display: grid; justify-items: center; gap: 12px; }
+.phone { position: relative; width: 390px; height: 800px; max-width: 100%; border-radius: 52px; padding: 12px; background: var(--bezel); }
+.display { position: relative; width: 100%; height: 100%; border-radius: 42px; overflow: hidden; background: var(--screen); color: var(--fg); isolation: isolate; }
+.island { position: absolute; top: 11px; left: 50%; width: 112px; height: 32px; margin-left: -56px; border-radius: 20px; background: #000; z-index: 50; }
+@media (max-width: 460px) { .phone { width: 100%; height: min(800px, calc(100svh - 40px)); min-height: 640px; border-radius: 40px; padding: 8px; } .display { border-radius: 34px; } }
+.hint { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; letter-spacing: .04em; }
+
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 56px 20px 24px; background: var(--screen); }
+.screen[hidden] { display: none !important; }
+.screen.enter { animation: maskIn 320ms var(--ramp) both; z-index: 2; }
+.screen.enter.back { animation-name: maskInBack; }
+@keyframes maskIn { from { clip-path: inset(0 0 0 100%); transform: translateX(48px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+@keyframes maskInBack { from { clip-path: inset(0 100% 0 0); transform: translateX(-48px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+
+.top { display: flex; align-items: center; gap: 12px; min-height: 48px; }
+.top h2 { margin: 0; font-size: 17px; letter-spacing: -.02em; text-transform: uppercase; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon-btn { width: 44px; height: 44px; display: grid; place-items: center; margin-left: -10px; }
+.icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.title-xl { margin: 8px 0 24px; font-size: 32px; line-height: 1; letter-spacing: -.02em; text-transform: uppercase; font-weight: 700; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.small { font-size: 11px; letter-spacing: .04em; color: var(--muted); }
+
+.btn { display: block; width: 100%; padding: 16px 24px; text-transform: uppercase; letter-spacing: -.02em; font-weight: 700; font-size: 17px;
+  background: var(--signal); color: var(--ink); transition: transform 450ms cubic-bezier(.34, 1.4, .64, 1); }
+.btn:active { transform: scale(.96); transition-duration: 120ms; }
+.btn.ghost { background: transparent; color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+.btn[disabled] { opacity: .4; cursor: default; }
+.actions { display: grid; gap: 8px; margin-top: auto; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.row2 .btn { font-size: 15px; padding: 16px 12px; white-space: nowrap; }
+
+/* Intro */
+#intro { background: var(--ink); color: var(--paper); justify-content: center; align-items: center; gap: 32px; padding-inline: 0; z-index: 40; cursor: pointer; }
+.word { display: flex; }
+.word span { display: block; height: 76px; overflow: hidden; font-size: 64px; line-height: 76px; font-weight: 700; letter-spacing: -.02em; }
+.word i { display: block; font-style: normal; transform: translateY(100%); }
+#intro.play .word i { animation: letterUp 480ms var(--enter) both; }
+@keyframes letterUp { to { transform: none; } }
+.sweep { width: 100%; height: 2px; }
+.sweep b { display: block; height: 2px; width: 0; background: var(--signal); }
+#intro.play .sweep b { animation: sweep 600ms var(--enter) both; animation-delay: 780ms; }
+@keyframes sweep { to { width: 100%; } }
+.room-rect { width: 240px; height: 160px; overflow: visible; }
+.room-rect rect { fill: none; stroke: var(--signal); stroke-width: 2; stroke-dasharray: 1; stroke-dashoffset: 1; }
+#intro.play .room-rect rect { animation: draw 900ms cubic-bezier(.65, 0, .35, 1) both; animation-delay: 1380ms; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+#intro.out { animation: fadeOut 240ms var(--exit) both; }
+@keyframes fadeOut { to { opacity: 0; } }
+
+/* Proyectos */
+.list { display: grid; gap: 16px; }
+.card { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 8px; text-align: left; box-shadow: inset 0 0 0 1px var(--hair); }
+.card .thumb { width: 96px; height: 96px; background: var(--hair); display: grid; place-items: center; }
+.card h3 { margin: 0 0 6px; font-size: 17px; letter-spacing: -.02em; text-transform: uppercase; }
+.card .meta { display: grid; gap: 2px; }
+.tag { display: inline-block; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--signal); box-shadow: inset 0 0 0 1px var(--signal); padding: 1px 6px; margin-bottom: 6px; }
+.stagger > * { animation: rise 480ms var(--enter) both; }
+.stagger > *:nth-child(2) { animation-delay: 60ms; } .stagger > *:nth-child(3) { animation-delay: 120ms; }
+@keyframes rise { from { opacity: 0; transform: translateY(24px); } }
+
+/* Escaneo */
+#scan { padding: 0; background: #07080A; color: var(--paper); }
+#scanCanvas, #scanVideo { position: absolute; inset: 0; width: 100%; height: 100%; }
+#scanVideo { object-fit: cover; background: #07080A; }
+.camnote { position: relative; z-index: 2; margin: 8px 20px 0; align-self: flex-start; font-family: var(--mono); font-size: 10px; letter-spacing: .06em;
+  padding: 4px 8px; background: rgba(11, 13, 16, .72); color: var(--paper); box-shadow: inset 0 0 0 1px var(--signal); }
+.hud { position: relative; z-index: 2; padding: 56px 20px 12px; background: rgba(11, 13, 16, .72); display: grid; gap: 10px; }
+.hud .top { min-height: 44px; }
+.counters { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.counter b { display: block; font-family: var(--mono); font-size: 17px; font-weight: 400; }
+.counter span { font-family: var(--mono); font-size: 10px; color: rgba(242, 240, 234, .6); }
+.roll { display: inline-flex; height: 1.3em; overflow: hidden; line-height: 1.3em; vertical-align: bottom; }
+.roll .col { display: flex; flex-direction: column; transition: transform 480ms var(--enter); }
+.roll .col i { font-style: normal; height: 1.3em; }
+.coverage { position: relative; z-index: 2; margin: auto 20px 12px; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: end; }
+.quads { display: grid; grid-template-columns: repeat(4, 18px); gap: 3px; }
+.quads i { width: 18px; height: 18px; box-shadow: inset 0 0 0 1px rgba(242, 240, 234, .5); }
+.quads i.on { background: var(--mesh); box-shadow: inset 0 0 0 1px var(--signal); animation: flash 120ms linear; }
+@keyframes flash { 0% { background: var(--paper); } 100% { background: var(--mesh); } }
+.coverage .pct { font-family: var(--mono); font-size: 32px; line-height: 1; text-align: right; }
+.coverage .pct small { display: block; font-size: 10px; color: rgba(242, 240, 234, .6); letter-spacing: .06em; }
+.scan-actions { position: relative; z-index: 2; padding: 16px 20px 24px; background: rgba(11, 13, 16, .72); }
+#scan .btn.ghost { color: var(--paper); box-shadow: inset 0 0 0 1px var(--paper); }
+
+/* Procesado */
+#process { justify-content: center; gap: 24px; }
+.ribbon { display: grid; gap: 4px; }
+.step { position: relative; overflow: hidden; padding: 12px 14px; font-family: var(--mono); font-size: 13px; letter-spacing: .04em; color: var(--muted); box-shadow: inset 0 0 0 1px var(--hair); display: flex; justify-content: space-between; }
+.step::before { content: ""; position: absolute; inset: 0; background: var(--signal); transform: scaleX(0); transform-origin: left; z-index: -1; }
+.step { isolation: isolate; }
+.step.done { color: var(--ink); text-transform: uppercase; font-weight: 600; }
+.step.done::before { animation: wipe 240ms var(--enter) both; }
+.step.active { color: var(--fg); }
+@keyframes wipe { to { transform: scaleX(1); } }
+
+/* Revisión */
+.seg { display: inline-flex; box-shadow: inset 0 0 0 1px var(--hair); }
+.seg button { font-family: var(--mono); font-size: 12px; padding: 6px 12px; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--screen); }
+.plan-box { flex: 1; min-height: 0; display: grid; place-items: center; }
+.plan { width: 100%; height: 100%; max-height: 420px; overflow: visible; }
+.plan .wall { fill: var(--line); fill-opacity: 0; stroke: var(--line); stroke-width: .012; stroke-dasharray: 1; stroke-dashoffset: 1; cursor: pointer; transition: stroke-dashoffset 900ms var(--enter), fill-opacity 240ms var(--enter); }
+.plan.drawn .wall { stroke-dashoffset: 0; fill-opacity: .85; }
+.plan .wall.sel { fill: var(--signal); stroke: var(--signal); }
+.plan .op { fill: none; stroke: var(--signal); stroke-width: .014; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 240ms var(--enter); }
+.plan .op.dash { stroke-dasharray: none; stroke-dashoffset: 0; opacity: 0; transition: opacity 240ms var(--enter); }
+.plan.drawn .op { stroke-dashoffset: 0; }
+.plan.drawn .op.dash { opacity: 1; }
+.plan .op.dash { stroke-dasharray: .08 .04; }
+.plan .dim { stroke: var(--muted); stroke-width: .006; fill: none; opacity: 0; transition: opacity 480ms var(--enter); }
+.plan .dimtxt { fill: var(--muted); font-family: var(--mono); font-size: .13px; opacity: 0; transition: opacity 480ms var(--enter); }
+.plan .label { fill: var(--fg); font-family: var(--grotesk); font-weight: 700; font-size: .2px; letter-spacing: -.004px; opacity: 0; transition: opacity 480ms var(--enter); }
+.plan.dims .dim, .plan.dims .dimtxt, .plan.dims .label { opacity: 1; }
+.info { display: flex; justify-content: space-between; align-items: baseline; min-height: 28px; font-family: var(--mono); font-size: 13px; }
+.info span:first-child { color: var(--muted); font-size: 11px; letter-spacing: .06em; }
+.chips { display: flex; gap: 8px; margin: 8px 0 12px; }
+.chips span { font-family: var(--mono); font-size: 11px; padding: 8px 12px; box-shadow: inset 0 0 0 1px var(--hair); }
+.iso { width: 100%; height: 100%; max-height: 420px; }
+
+/* Exportar y Ajustes */
+.scroll { overflow-y: auto; display: grid; gap: 28px; align-content: start; padding-bottom: 8px; scrollbar-width: none; }
+.sec h3 { margin: 0 0 4px; font-size: 17px; text-transform: uppercase; letter-spacing: -.02em; }
+.sec p { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+.opt { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--hair); font-size: 15px; }
+.opt .mono { color: var(--muted); font-size: 13px; }
+.switch { position: relative; width: 48px; height: 28px; flex: none; border-radius: 14px; background: var(--hair); transition: background 240ms var(--enter); }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--fg); transition: transform 450ms cubic-bezier(.34, 1.4, .64, 1); }
+.switch[aria-checked="true"] { background: var(--signal); }
+.switch[aria-checked="true"]::after { transform: translateX(20px); background: var(--ink); }
+.size { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0; }
+.size b { font-family: var(--mono); font-weight: 400; font-size: 17px; }
+pre.dxf { margin: 12px 0 0; max-height: 160px; overflow: auto; padding: 12px; font-family: var(--mono); font-size: 11px; line-height: 1.4; box-shadow: inset 0 0 0 1px var(--hair); white-space: pre; }
+.stepper { display: inline-flex; align-items: center; gap: 4px; }
+.stepper button { width: 32px; height: 32px; box-shadow: inset 0 0 0 1px var(--hair); font-family: var(--mono); }
+.stepper output { min-width: 64px; text-align: center; font-family: var(--mono); font-size: 13px; }
+.note { font-family: var(--mono); font-size: 12px; color: var(--signal); min-height: 18px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen.enter, .screen.enter.back { animation: fade 150ms ease both; }
+  @keyframes fade { from { opacity: 0; } }
+  .stagger > * { animation: fade 150ms ease both !important; }
+  #intro.play .word i, #intro.play .sweep b, #intro.play .room-rect rect { animation: none; transform: none; width: 100%; stroke-dashoffset: 0; }
+  .plan .wall, .plan .op, .plan .dim, .plan .dimtxt, .plan .label { transition-duration: 150ms; transition-delay: 0s !important; }
+  .roll .col { transition-duration: 150ms; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <section class="panel" aria-labelledby="ptitle">
+    <div class="eyebrow">Prototipo web · v0.1 · datos de ejemplo</div>
+    <h1 id="ptitle">Plano<span>.</span></h1>
+    <p><strong>Escanea una vivienda con un iPhone Pro y saca el plano en DXF sin modelar a mano.</strong> Esta página es un prototipo navegable de la app: recorre las seis pantallas y las cinco secuencias de motion del brief con una estancia de ejemplo de 4,20 × 3,10 m.</p>
+    <p>La app real es nativa (SwiftUI + RoomPlan) y necesita LiDAR. Todavía no está en la App Store ni en TestFlight: se compila desde el repositorio en un Mac con Xcode.</p>
+    <div>
+      <div class="eyebrow" style="margin-bottom:10px">Ir a una pantalla</div>
+      <div class="jump" id="jump">
+        <button data-go="intro">Intro</button>
+        <button data-go="projects">Proyectos</button>
+        <button data-go="scan">Escaneo</button>
+        <button data-go="review">Revisión</button>
+        <button data-go="export">Exportar</button>
+        <button data-go="settings">Ajustes</button>
+      </div>
+    </div>
+    <dl class="facts">
+      <dt>Móvil</dt><dd>iPhone Pro con LiDAR, iOS 17 o posterior</dd>
+      <dt>Escritorio</dt><dd>Procesador Python 3.11: <span class="mono">plano dxf piso.plano</span></dd>
+      <dt>Salida</dt><dd>DXF con capas MUROS, HUECOS y COTAS. IFC 4 y PDF, en desarrollo</dd>
+      <dt>Privacidad</dt><dd>Sin cuentas, sin nube, sin anuncios</dd>
+      <dt>Código</dt><dd><a href="https://github.com/POLETE-detoned/plano.app/tree/claude/plano-bootstrap" target="_blank" rel="noopener">github.com/POLETE-detoned/plano.app</a></dd>
+    </dl>
+  </section>
+
+  <div class="phone-col">
+    <div class="phone">
+      <div class="display" id="display">
+        <div class="island" aria-hidden="true"></div>
+
+        <!-- 1 · Intro -->
+        <section class="screen" id="intro" hidden aria-label="Intro" role="button" tabindex="0">
+          <div class="word" aria-label="Plano"><span><i>P</i></span><span><i>L</i></span><span><i>A</i></span><span><i>N</i></span><span><i>O</i></span></div>
+          <div class="sweep"><b></b></div>
+          <svg class="room-rect" viewBox="0 0 240 160" aria-hidden="true"><rect x="1" y="1" width="238" height="158" pathLength="1"/></svg>
+        </section>
+
+        <!-- 2 · Proyectos -->
+        <section class="screen" id="projects" hidden aria-label="Proyectos">
+          <div class="top">
+            <div class="title-xl" style="margin:0;flex:1">Proyectos</div>
+            <button class="icon-btn" data-go="settings" aria-label="Ajustes"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+          </div>
+          <div class="list stagger" style="margin-top:20px">
+            <button class="card" data-go="review">
+              <div class="thumb"><svg viewBox="-0.3 -0.3 4.8 3.7" width="80" height="62" aria-hidden="true" id="thumb"></svg></div>
+              <div class="meta">
+                <div><span class="tag">EJEMPLO</span></div>
+                <h3>Piso de prueba</h3>
+                <span class="mono small">1 ESTANCIA · 186 FOTOS</span>
+                <span class="mono small">4 oct 2026, 10:03</span>
+              </div>
+              <span class="small" aria-hidden="true">›</span>
+            </button>
+          </div>
+          <div class="actions"><button class="btn" data-go="scan">Nuevo escaneo</button></div>
+        </section>
+
+        <!-- 3 · Escaneo -->
+        <section class="screen" id="scan" hidden aria-label="Escaneo">
+          <video id="scanVideo" playsinline muted autoplay hidden aria-hidden="true"></video>
+          <canvas id="scanCanvas" aria-hidden="true"></canvas>
+          <div class="hud">
+            <div class="top">
+              <button class="icon-btn" data-back aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              <h2>Salón</h2>
+              <span class="mono" id="clock">00:00</span>
+            </div>
+            <div class="counters">
+              <div class="counter"><b id="cWalls"></b><span>MUROS</span></div>
+              <div class="counter"><b id="cDoors"></b><span>PUERTAS</span></div>
+              <div class="counter"><b id="cWins"></b><span>VENT.</span></div>
+              <div class="counter"><b id="cOps"></b><span>HUECOS</span></div>
+              <div class="counter"><b id="cFotos"></b><span>FOTOS</span></div>
+            </div>
+          </div>
+          <div class="camnote" id="camNote" aria-live="polite">ABRIENDO CÁMARA…</div>
+          <div class="coverage">
+            <div class="quads" id="quads" aria-label="Cobertura por cuadrantes"></div>
+            <div class="pct"><span id="cPct"></span><small>% COBERTURA</small></div>
+          </div>
+          <div class="scan-actions"><button class="btn" id="finish">Terminar estancia</button></div>
+        </section>
+
+        <!-- Procesado (secuencia 3) -->
+        <section class="screen" id="process" hidden aria-label="Procesado">
+          <div class="title-xl">Procesando</div>
+          <div class="ribbon" id="ribbon"></div>
+          <div class="mono small" id="procNote">plano dxf piso.plano</div>
+        </section>
+
+        <!-- 4 · Revisión -->
+        <section class="screen" id="review" hidden aria-label="Revisión">
+          <div class="top">
+            <button class="icon-btn" data-back aria-label="Volver"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+            <h2>Piso de prueba</h2>
+            <div class="seg" role="group" aria-label="Vista">
+              <button aria-pressed="true" data-view="2d">2D</button><button aria-pressed="false" data-view="3d">3D</button>
+            </div>
+          </div>
+          <div class="plan-box">
+            <svg class="plan" id="plan" viewBox="-0.75 -0.75 5.7 4.6" role="img" aria-label="Planta del salón, 4,20 por 3,10 metros"></svg>
+            <svg class="iso" id="iso" viewBox="-3.4 -3.6 7.4 6" hidden role="img" aria-label="Modelo 3D del salón"></svg>
+          </div>
+          <div class="info" id="wallInfo"><span>TOCA UN MURO</span><span></span></div>
+          <div class="chips"><span>SALÓN</span></div>
+          <div class="row2">
+            <button class="btn ghost" data-go="scan">Añadir estancia</button>
+            <button class="btn" data-go="export">Exportar</button>
+          </div>
+        </section>
+
+        <!-- 5 · Exportar -->
+        <section class="screen" id="export" hidden aria-label="Exportar">
+          <div class="top">
+            <button class="icon-btn" data-back aria-label="Volver"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+            <h2>Exportar</h2>
+          </div>
+          <div class="scroll">
+            <div class="sec">
+              <h3>Paquete .plano</h3>
+              <p>Todo lo que necesita el procesador de escritorio: fotos, malla y estancias.</p>
+              <div class="opt">Fotos 48 MP + profundidad <button class="switch" role="switch" aria-checked="true" data-size="1860" aria-label="Fotos"></button></div>
+              <div class="opt">Malla (PLY) <button class="switch" role="switch" aria-checked="true" data-size="24" aria-label="Malla"></button></div>
+              <div class="opt">Modelos USDZ <button class="switch" role="switch" aria-checked="true" data-size="3" aria-label="USDZ"></button></div>
+              <div class="size"><span class="mono small">TAMAÑO</span><b id="size"></b></div>
+              <button class="btn" id="makePkg">Generar .plano</button>
+              <div class="note" id="pkgNote" aria-live="polite"></div>
+            </div>
+            <div class="sec">
+              <h3>DXF rápido</h3>
+              <p>Planta sin refinar generada en el móvil. Este es el DXF R12 real de la estancia de ejemplo.</p>
+              <button class="btn ghost" id="showDxf">Ver DXF</button>
+              <div id="dxfBox" hidden>
+                <pre class="dxf" id="dxf" tabindex="0"></pre>
+                <button class="btn ghost" id="copyDxf" style="margin-top:8px">Copiar DXF</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6 · Ajustes -->
+        <section class="screen" id="settings" hidden aria-label="Ajustes">
+          <div class="top">
+            <button class="icon-btn" data-back aria-label="Volver"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+            <h2>Ajustes</h2>
+          </div>
+          <div class="scroll">
+            <div class="sec">
+              <h3>Unidades</h3>
+              <div class="seg" role="group" aria-label="Unidades" style="margin-top:8px">
+                <button aria-pressed="true" data-unit="m">METROS</button><button aria-pressed="false" data-unit="ft">PIES</button>
+              </div>
+            </div>
+            <div class="sec">
+              <h3>Plano</h3>
+              <div class="opt">Tolerancia 90° <span class="stepper"><button data-step="tol" data-d="-0.5" aria-label="Menos tolerancia">−</button><output id="tol">3,0°</output><button data-step="tol" data-d="0.5" aria-label="Más tolerancia">+</button></span></div>
+              <div class="opt">Grosor de muro <span class="stepper"><button data-step="thk" data-d="-0.01" aria-label="Menos grosor">−</button><output id="thk">0,10 m</output><button data-step="thk" data-d="0.01" aria-label="Más grosor">+</button></span></div>
+            </div>
+            <div class="sec">
+              <h3>Calibración</h3>
+              <p>10 paredes de 3 a 5 m medidas con láser. Objetivo: ±2 cm.</p>
+              <div class="opt">Error medio <span class="mono">±1,4 cm</span></div>
+              <div class="opt">Error máximo <span class="mono">±2,6 cm</span></div>
+              <div class="opt">Muestras <span class="mono">10 · ejemplo</span></div>
+            </div>
+            <div class="sec">
+              <h3>Otros</h3>
+              <div class="opt">Sonido en transiciones <button class="switch" role="switch" aria-checked="false" aria-label="Sonido"></button></div>
+              <button class="btn ghost" data-go="intro" style="margin-top:12px">Ver la intro otra vez</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="hint">Toca el teléfono para navegar · respeta “Reducir movimiento”</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const NS = "http://www.w3.org/2000/svg";
+  const sleep = ms => new Promise(r => setTimeout(r, reduce ? Math.min(ms, 150) : ms));
+
+  // ---------- Estado y unidades ----------
+  const state = { unit: "m", tol: 3, thk: 0.10, stack: ["projects"] };
+  const fmt = (m) => {
+    if (state.unit === "m") return m.toFixed(2).replace(".", ",");
+    const inches = Math.round(m / 0.0254), ft = Math.floor(inches / 12);
+    return `${ft}' ${inches - ft * 12}"`;
+  };
+
+  // ---------- Geometría de la estancia de ejemplo (igual que `plano sample`) ----------
+  const W = 4.2, D = 3.1, H = 2.6;
+  const walls = [
+    { p: [0, 0], d: [1, 0], n: [0, -1], L: W },
+    { p: [W, 0], d: [0, 1], n: [1, 0], L: D },
+    { p: [W, D], d: [-1, 0], n: [0, 1], L: W },
+    { p: [0, D], d: [0, -1], n: [-1, 0], L: D },
+  ];
+  const openings = [
+    { w: 0, kind: "door", a: 0.59, b: 1.41, h: 2.03 },
+    { w: 1, kind: "window", a: 0.95, b: 2.15, h: 1.10 },
+    { w: 2, kind: "opening", a: 2.55, b: 3.45, h: 2.10 },
+  ];
+  const add = (a, b, k = 1) => [a[0] + b[0] * k, a[1] + b[1] * k];
+  const at = (w, s) => add(w.p, w.d, s);
+  const scr = (p) => [p[0], D - p[1]]; // planta → SVG (Y hacia abajo)
+  const pt = (p) => scr(p).map(v => +v.toFixed(4)).join(",");
+  function solids(i) {
+    const gaps = openings.filter(o => o.w === i).sort((x, y) => x.a - y.a);
+    const out = []; let c = 0;
+    for (const g of gaps) { if (g.a > c) out.push([c, g.a]); c = Math.max(c, g.b); }
+    if (walls[i].L > c) out.push([c, walls[i].L]);
+    return out;
+  }
+  function el(tag, attrs, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  function buildPlan(svg, { interactive = false, dims = true } = {}) {
+    svg.innerHTML = "";
+    const t = state.thk;
+    let idx = 0;
+    walls.forEach((w, i) => {
+      for (const [u, v] of solids(i)) {
+        const ia = at(w, u), ib = at(w, v);
+        const oa = u <= 1e-6 ? add(add(ia, w.n, t), w.d, -t) : add(ia, w.n, t);
+        const ob = v >= w.L - 1e-6 ? add(add(ib, w.n, t), w.d, t) : add(ib, w.n, t);
+        const path = el("path", { d: `M${pt(ia)} L${pt(ib)} L${pt(ob)} L${pt(oa)} Z`, class: "wall", pathLength: 1 }, svg);
+        path.style.transitionDelay = `${idx * 60}ms, ${900 + idx * 60}ms`;
+        path.dataset.wall = i;
+        idx++;
+      }
+    });
+    const opDelay = 900 + idx * 60;
+    for (const o of openings) {
+      const w = walls[o.w], pa = at(w, o.a), pb = at(w, o.b), inward = [-w.n[0], -w.n[1]];
+      if (o.kind === "door") {
+        const r = o.b - o.a, leaf = add(pa, inward, r);
+        const e = el("path", { d: `M${pt(pa)} L${pt(leaf)} A${r},${r} 0 0 1 ${pt(pb)}`, class: "op", pathLength: 1 }, svg);
+        e.style.transitionDelay = `${opDelay}ms`;
+      } else if (o.kind === "window") {
+        for (const k of [0, 0.5, 1]) {
+          const e = el("path", { d: `M${pt(add(pa, w.n, t * k))} L${pt(add(pb, w.n, t * k))}`, class: "op", pathLength: 1 }, svg);
+          e.style.transitionDelay = `${opDelay}ms`;
+        }
+      } else {
+        for (const k of [0, 1]) {
+          const e = el("path", { d: `M${pt(add(pa, w.n, t * k))} L${pt(add(pb, w.n, t * k))}`, class: "op dash" }, svg);
+          e.style.transitionDelay = `${opDelay}ms`;
+        }
+      }
+    }
+    if (!dims) return;
+    const dimDelay = opDelay + 240;
+    walls.forEach((w, i) => {
+      const inward = [-w.n[0], -w.n[1]], off = 0.3;
+      const a = add(w.p, inward, off), b = add(at(w, w.L), inward, off);
+      const tick = (p) => { const q = scr(p); return `M${q[0] - .05},${q[1] + .05} L${q[0] + .05},${q[1] - .05}`; };
+      const e = el("path", { d: `M${pt(a)} L${pt(b)} ${tick(a)} ${tick(b)}`, class: "dim" }, svg);
+      e.style.transitionDelay = `${dimDelay}ms`;
+      const mid = scr(add(add(w.p, w.d, w.L / 2), inward, off + 0.07));
+      const vertical = w.d[0] === 0;
+      const txt = el("text", { x: mid[0], y: mid[1], class: "dimtxt", "text-anchor": "middle", "dominant-baseline": "middle",
+        transform: vertical ? `rotate(-90 ${mid[0]} ${mid[1]})` : "" }, svg);
+      txt.dataset.value = w.L;
+      txt.style.transitionDelay = `${dimDelay}ms`;
+      txt.textContent = fmt(0);
+    });
+    const label = el("text", { x: W / 2, y: D / 2, class: "label", "text-anchor": "middle", "dominant-baseline": "middle" }, svg);
+    label.textContent = "SALÓN";
+    label.style.transitionDelay = `${dimDelay}ms`;
+    if (interactive) {
+      $$(".wall", svg).forEach(p => p.addEventListener("click", () => selectWall(+p.dataset.wall)));
+    }
+    return dimDelay;
+  }
+
+  function selectWall(i) {
+    const plan = $("#plan");
+    const already = plan.dataset.sel === String(i);
+    $$(".wall", plan).forEach(p => p.classList.toggle("sel", !already && +p.dataset.wall === i));
+    plan.dataset.sel = already ? "" : i;
+    const info = $("#wallInfo").children;
+    if (already) { info[0].textContent = "TOCA UN MURO"; info[1].textContent = ""; return; }
+    info[0].textContent = "MURO";
+    info[1].textContent = `${fmt(walls[i].L)} × ${fmt(H)} ${state.unit}`;
+  }
+
+  function countUp(svg, delay) {
+    const texts = $$(".dimtxt", svg);
+    const ease = x => 1 - Math.pow(1 - x, 4);
+    setTimeout(() => {
+      const t0 = performance.now(), dur = reduce ? 1 : 480;
+      const tick = (now) => {
+        const k = Math.min(1, (now - t0) / dur);
+        texts.forEach(t => t.textContent = fmt(+t.dataset.value * ease(k)));
+        if (k < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }, reduce ? 0 : delay);
+  }
+
+  function drawResult() {
+    const svg = $("#plan");
+    svg.classList.remove("drawn", "dims");
+    svg.dataset.sel = "";
+    const dimDelay = buildPlan(svg, { interactive: true });
+    $("#wallInfo").children[0].textContent = "TOCA UN MURO";
+    $("#wallInfo").children[1].textContent = "";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      svg.classList.add("drawn", "dims");
+      countUp(svg, dimDelay);
+    }));
+  }
+
+  function drawThumb() {
+    const svg = $("#thumb");
+    buildPlan(svg, { dims: false });
+    svg.classList.add("plan", "drawn");
+    svg.setAttribute("viewBox", "-0.35 -0.35 4.9 3.8");
+    $$(".wall", svg).forEach(p => { p.style.transition = "none"; p.style.strokeWidth = ".03"; });
+    $$(".op", svg).forEach(p => { p.style.transition = "none"; p.style.strokeWidth = ".03"; });
+  }
+
+  // ---------- Vista 3D isométrica ----------
+  function drawIso() {
+    const svg = $("#iso"); svg.innerHTML = "";
+    const c = Math.cos(Math.PI / 6), s = Math.sin(Math.PI / 6);
+    const P = (x, y, z) => [((x - W / 2) - (y - D / 2)) * c * 0.9, ((x - W / 2) + (y - D / 2)) * s * 0.9 - z * 0.9];
+    const poly = (pts, cls, style) => el("polygon", { points: pts.map(p => P(...p).map(v => v.toFixed(3)).join(",")).join(" "), style }, svg);
+    poly([[0, 0, 0], [W, 0, 0], [W, D, 0], [0, D, 0]], "", "fill:var(--hair);stroke:var(--line);stroke-width:.015");
+    // Muros traseros (y = D) e izquierdo (x = 0) con altura; delanteros solo zócalo para ver dentro.
+    poly([[0, D, 0], [W, D, 0], [W, D, H], [0, D, H]], "", "fill:var(--mesh);fill-opacity:.35;stroke:var(--line);stroke-width:.015");
+    poly([[W, 0, 0], [W, D, 0], [W, D, H], [W, 0, H]], "", "fill:var(--mesh);fill-opacity:.55;stroke:var(--line);stroke-width:.015");
+    poly([[0.75, D, 0], [1.65, D, 0], [1.65, D, 2.1], [0.75, D, 2.1]], "", "fill:var(--screen);stroke:var(--signal);stroke-width:.02");
+    poly([[W, 0.95, 0.9], [W, 2.15, 0.9], [W, 2.15, 2.0], [W, 0.95, 2.0]], "", "fill:var(--screen);stroke:var(--signal);stroke-width:.02");
+    poly([[0, 0, 0], [W, 0, 0], [W, 0, .12], [0, 0, .12]], "", "fill:var(--line);stroke:none");
+    poly([[0, 0, 0], [0, D, 0], [0, D, .12], [0, 0, .12]], "", "fill:var(--line);stroke:none");
+  }
+
+  // ---------- Rueda numérica ----------
+  function roll(elm, value, width = 1) {
+    const digits = String(value).padStart(width, "0").split("");
+    if (elm.childElementCount !== digits.length) {
+      elm.innerHTML = digits.map(() => `<span class="roll"><span class="col">${[...Array(10).keys()].map(n => `<i>${n}</i>`).join("")}</span></span>`).join("");
+    }
+    $$(".col", elm).forEach((col, i) => col.style.transform = `translateY(-${digits[i] * 1.3}em)`);
+    elm.setAttribute("aria-label", value);
+  }
+
+  // ---------- Escaneo simulado ----------
+  let scanTimer = null, raf = null;
+  function startScan() {
+    stopScan();
+    const quads = $("#quads"); quads.innerHTML = "<i></i>".repeat(8);
+    const counters = { cWalls: 0, cDoors: 0, cWins: 0, cOps: 0, cFotos: 0 };
+    let pct = 0, sec = 0;
+    Object.keys(counters).forEach(k => roll($("#" + k), 0));
+    roll($("#cPct"), 0, 1);
+    $("#clock").textContent = "00:00";
+    const script = [[1, "cWalls", 1], [2, "cWalls", 2], [3, "cDoors", 1], [4, "cWalls", 3], [5, "cWins", 1], [7, "cWalls", 4], [8, "cOps", 1]];
+    let tick = 0;
+    scanTimer = setInterval(() => {
+      tick++;
+      if (tick % 2 === 0) { sec++; $("#clock").textContent = `00:${String(sec).padStart(2, "0")}`; }
+      for (const [t, k, v] of script) if (t * 2 === tick) { counters[k] = v; roll($("#" + k), v); }
+      counters.cFotos += tick % 3 === 0 ? 2 : 1; roll($("#cFotos"), counters.cFotos);
+      if (pct < 100) {
+        pct = Math.min(100, pct + 6 + (tick % 3));
+        roll($("#cPct"), pct, 1);
+        $$("i", quads).forEach((q, i) => { if (pct >= (i + 1) * 12.5 && !q.classList.contains("on")) q.classList.add("on"); });
+      }
+    }, 500);
+    const canvas = $("#scanCanvas"), ctx = canvas.getContext("2d");
+    const t0 = performance.now();
+    openCamera();
+    const frame = (now) => {
+      const r = canvas.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+      if (canvas.width !== Math.round(r.width * dpr)) { canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr); }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (camStream) drawLive(ctx, r.width, r.height, (now - t0) / 1000);
+      else drawScan(ctx, r.width, r.height, (now - t0) / 1000);
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+  }
+  function stopScan() { clearInterval(scanTimer); cancelAnimationFrame(raf); scanTimer = raf = null; closeCamera(); }
+
+  // Cámara real del móvil (getUserMedia). El navegador no da acceso al LiDAR ni a RoomPlan:
+  // se ve la cámara en vivo, pero muros, cotas y cobertura siguen siendo de ejemplo.
+  let camStream = null, camRequest = 0;
+  async function openCamera() {
+    const note = $("#camNote"), video = $("#scanVideo");
+    const req = ++camRequest;
+    if (!navigator.mediaDevices?.getUserMedia) { note.textContent = "SIN CÁMARA EN ESTE NAVEGADOR · VISTA SIMULADA"; return; }
+    note.textContent = "ABRIENDO CÁMARA…";
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+      if (req !== camRequest || current !== "scan") { stream.getTracks().forEach(t => t.stop()); return; }
+      camStream = stream;
+      video.srcObject = stream;
+      video.hidden = false;
+      try { await video.play(); } catch {}
+      note.textContent = "CÁMARA EN VIVO · MEDIDAS DE EJEMPLO · EL ESCANEO REAL ES DE LA APP iOS";
+    } catch (err) {
+      if (req !== camRequest) return;
+      note.textContent = err && err.name === "NotAllowedError"
+        ? "PERMISO DE CÁMARA DENEGADO · VISTA SIMULADA"
+        : "NO SE PUDO ABRIR LA CÁMARA · VISTA SIMULADA";
+    }
+  }
+  function closeCamera() {
+    camRequest++;
+    if (camStream) camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+    const video = $("#scanVideo");
+    if (video) { video.srcObject = null; video.hidden = true; }
+  }
+
+  // Capa sobre la cámara: retícula, esquinas de encuadre y barrido (ciclo 1,6 s).
+  function drawLive(ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    const cx = w / 2, cy = h * 0.48, m = 28, L = 26;
+    ctx.strokeStyle = "rgba(242,240,234,.9)"; ctx.lineWidth = 2;
+    for (const [x, y, dx, dy] of [[m, h * .2, 1, 1], [w - m, h * .2, -1, 1], [m, h * .78, 1, -1], [w - m, h * .78, -1, -1]]) {
+      ctx.beginPath(); ctx.moveTo(x, y + dy * L); ctx.lineTo(x, y); ctx.lineTo(x + dx * L, y); ctx.stroke();
+    }
+    ctx.strokeStyle = "#FF5A1F"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx - 14, cy); ctx.lineTo(cx + 14, cy); ctx.moveTo(cx, cy - 14); ctx.lineTo(cx, cy + 14); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, 22, 0, Math.PI * 2); ctx.stroke();
+    if (!reduce) {
+      const k = (t % 1.6) / 1.6, y = h * .2 + (h * .58) * k;
+      const g = ctx.createLinearGradient(0, y - 40, 0, y);
+      g.addColorStop(0, "rgba(255,90,31,0)"); g.addColorStop(1, "rgba(255,90,31,.3)");
+      ctx.fillStyle = g; ctx.fillRect(m, y - 40, w - 2 * m, 40);
+      ctx.fillStyle = "#FF5A1F"; ctx.fillRect(m, y, w - 2 * m, 1.5);
+    }
+  }
+
+  // Vista de cámara simulada: esquina de habitación en perspectiva con malla y barrido (ciclo 1,6 s).
+  function drawScan(ctx, w, h, t) {
+    ctx.fillStyle = "#07080A"; ctx.fillRect(0, 0, w, h);
+    const cx = w * 0.5, horizon = h * 0.46, sway = reduce ? 0 : Math.sin(t * 0.4) * 10;
+    const corner = cx + sway, top = h * 0.16, bottom = h * 0.78;
+    const planes = [
+      [[0, top - 30], [corner, top], [corner, bottom], [0, bottom + 60]],
+      [[corner, top], [w, top - 40], [w, bottom + 70], [corner, bottom]],
+      [[0, bottom + 60], [corner, bottom], [w, bottom + 70], [w, h], [0, h]],
+    ];
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, "#15181D"); grad.addColorStop(1, "#0C0E11");
+    planes.forEach((poly, i) => {
+      ctx.beginPath(); poly.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+      ctx.fillStyle = i === 2 ? "#101215" : grad; ctx.fill();
+    });
+    // Malla triangulada sobre los dos muros
+    ctx.strokeStyle = "rgba(255,90,31,.4)"; ctx.lineWidth = 0.75;
+    const n = 9;
+    const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+    for (const quad of planes.slice(0, 2)) {
+      const [a, b, c, d] = quad;
+      for (let i = 0; i <= n; i++) {
+        const k = i / n;
+        const p1 = lerp(a, b, k), p2 = lerp(d, c, k), q1 = lerp(a, d, k), q2 = lerp(b, c, k);
+        ctx.beginPath(); ctx.moveTo(...p1); ctx.lineTo(...p2); ctx.moveTo(...q1); ctx.lineTo(...q2); ctx.stroke();
+        if (i < n) {
+          const r1 = lerp(a, b, (i + 1) / n), r2 = lerp(d, c, (i + 1) / n);
+          ctx.beginPath(); ctx.moveTo(...p1); ctx.lineTo(...r2); ctx.stroke();
+        }
+      }
+    }
+    // Aristas de RoomPlan
+    ctx.strokeStyle = "rgba(242,240,234,.9)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(corner, top); ctx.lineTo(corner, bottom); ctx.moveTo(0, bottom + 60); ctx.lineTo(corner, bottom); ctx.lineTo(w, bottom + 70); ctx.stroke();
+    // Puerta en el muro izquierdo
+    const door = [lerp(lerp(planes[0][0], planes[0][1], .35), lerp(planes[0][3], planes[0][2], .35), .3), lerp(planes[0][3], planes[0][2], .35), lerp(planes[0][3], planes[0][2], .62), lerp(lerp(planes[0][0], planes[0][1], .62), lerp(planes[0][3], planes[0][2], .62), .3)];
+    ctx.strokeStyle = "#FF5A1F"; ctx.lineWidth = 2; ctx.beginPath(); door.forEach((p, k) => k ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.stroke();
+    // Barrido
+    if (!reduce) {
+      const k = (t % 1.6) / 1.6, y = top - 40 + (bottom + 80 - top) * k;
+      const g = ctx.createLinearGradient(0, y - 40, 0, y);
+      g.addColorStop(0, "rgba(255,90,31,0)"); g.addColorStop(1, "rgba(255,90,31,.35)");
+      ctx.fillStyle = g; ctx.fillRect(0, y - 40, w, 40);
+      ctx.fillStyle = "#FF5A1F"; ctx.fillRect(0, y, w, 1.5);
+    }
+  }
+
+  // ---------- Procesado (cinta de 5 pasos) ----------
+  async function runProcess() {
+    const steps = ["Importar", "Refinar", "Ortogonalizar", "Paredes", "Exportar"];
+    const ribbon = $("#ribbon");
+    ribbon.innerHTML = steps.map(s => `<div class="step"><span>${s.toLowerCase()}</span><span class="t"></span></div>`).join("");
+    const items = $$(".step", ribbon);
+    for (let i = 0; i < items.length; i++) {
+      items[i].classList.add("active");
+      await sleep(420);
+      items[i].classList.remove("active");
+      items[i].classList.add("done");
+      items[i].firstChild.textContent = steps[i];
+      items[i].lastChild.textContent = "OK";
+    }
+    await sleep(360);
+    if (current === "process") go("review", { replace: true });
+  }
+
+  // ---------- Navegación ----------
+  let current = null;
+  function show(id, dir = "fwd") {
+    const prev = current && $("#" + current);
+    const next = $("#" + id);
+    if (prev === next) return;
+    next.hidden = false;
+    next.classList.remove("enter", "back");
+    void next.offsetWidth;
+    next.classList.add("enter");
+    if (dir === "back") next.classList.add("back");
+    if (prev) setTimeout(() => { if (current !== prev.id) prev.hidden = true; }, reduce ? 150 : 320);
+    current = id;
+    onEnter(id);
+    $$("#jump button").forEach(b => b.setAttribute("aria-current", b.dataset.go === id || (id === "process" && b.dataset.go === "scan") ? "true" : "false"));
+  }
+  function go(id, { replace = false } = {}) {
+    if (id === "intro") return playIntro();
+    hideIntro();
+    if (id === "projects") state.stack = ["projects"];
+    else if (replace) state.stack[state.stack.length - 1] = id;
+    else if (state.stack[state.stack.length - 1] !== id) state.stack.push(id);
+    show(id);
+  }
+  function back() {
+    if (state.stack.length > 1) state.stack.pop();
+    show(state.stack[state.stack.length - 1], "back");
+  }
+  function onEnter(id) {
+    if (id !== "scan") stopScan();
+    if (id === "scan") startScan();
+    if (id === "process") runProcess();
+    if (id === "review") { setView("2d"); drawResult(); }
+    if (id === "projects") { const l = $("#projects .list"); l.classList.remove("stagger"); void l.offsetWidth; l.classList.add("stagger"); }
+    if (id === "export") updateSize();
+  }
+
+  // ---------- Intro ----------
+  let introTimer = null;
+  function playIntro() {
+    stopScan();
+    const intro = $("#intro");
+    clearTimeout(introTimer);
+    intro.classList.remove("play", "out", "enter");
+    intro.hidden = false;
+    void intro.offsetWidth;
+    intro.classList.add("play");
+    introTimer = setTimeout(endIntro, reduce ? 1200 : 4600);
+    $$("#jump button").forEach(b => b.setAttribute("aria-current", b.dataset.go === "intro" ? "true" : "false"));
+  }
+  // Quita la intro sin navegar (al saltar a otra pantalla mientras se reproduce).
+  function hideIntro() {
+    const intro = $("#intro");
+    if (intro.hidden) return;
+    clearTimeout(introTimer);
+    intro.hidden = true;
+    intro.classList.remove("play", "out");
+  }
+  function endIntro() {
+    const intro = $("#intro");
+    if (intro.hidden) return;
+    clearTimeout(introTimer);
+    state.stack = ["projects"];
+    $$(".screen").forEach(s => { if (s.id !== "intro" && s.id !== "projects") s.hidden = true; });
+    current = null;
+    show("projects");
+    intro.classList.add("out");
+    setTimeout(() => { intro.hidden = true; intro.classList.remove("out"); }, 240);
+  }
+  $("#intro").addEventListener("click", endIntro);
+  $("#intro").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); endIntro(); } });
+
+  // ---------- Revisión 2D/3D ----------
+  function setView(v) {
+    $$("[data-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === v ? "true" : "false"));
+    $("#plan").hidden = v !== "2d";
+    $("#iso").hidden = v !== "3d";
+    $("#wallInfo").style.visibility = v === "2d" ? "visible" : "hidden";
+    if (v === "3d") drawIso();
+  }
+  $$("[data-view]").forEach(b => b.addEventListener("click", () => { setView(b.dataset.view); if (b.dataset.view === "2d") drawResult(); }));
+
+  // ---------- Exportar ----------
+  function updateSize() {
+    const mb = $$("#export .switch").reduce((s, sw) => s + (sw.getAttribute("aria-checked") === "true" ? +sw.dataset.size : 0), 0) + 1;
+    $("#size").textContent = mb >= 1000 ? `${(mb / 1000).toFixed(2).replace(".", ",")} GB` : `${mb} MB`;
+    $("#makePkg").textContent = "Generar .plano";
+    $("#makePkg").disabled = false;
+    $("#pkgNote").textContent = "";
+  }
+  $$(".switch").forEach(sw => sw.addEventListener("click", () => {
+    sw.setAttribute("aria-checked", sw.getAttribute("aria-checked") === "true" ? "false" : "true");
+    if (sw.closest("#export")) updateSize();
+  }));
+  $("#makePkg").addEventListener("click", async () => {
+    const b = $("#makePkg");
+    if (b.dataset.ready) { $("#pkgNote").textContent = "En el iPhone se abre la hoja de compartir: AirDrop o Archivos."; return; }
+    b.disabled = true; b.textContent = "Generando…";
+    await sleep(900);
+    b.disabled = false; b.textContent = "Enviar Piso-de-prueba.plano"; b.dataset.ready = "1";
+  });
+  $("#showDxf").addEventListener("click", () => {
+    const box = $("#dxfBox");
+    box.hidden = !box.hidden;
+    $("#showDxf").textContent = box.hidden ? "Ver DXF" : "Ocultar DXF";
+    if (!box.hidden) $("#dxf").textContent = quickDxf();
+  });
+  $("#copyDxf").addEventListener("click", async () => {
+    const pre = $("#dxf");
+    try { await navigator.clipboard.writeText(pre.textContent); $("#copyDxf").textContent = "DXF copiado"; }
+    catch { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $("#copyDxf").textContent = "Selecciona y copia"; }
+    setTimeout(() => $("#copyDxf").textContent = "Copiar DXF", 1600);
+  });
+
+  // DXF R12: misma estructura que QuickDXFWriter.swift (validada con ezdxf).
+  function quickDxf() {
+    const out = [];
+    const esc = v => [...String(v)].map(ch => ch.charCodeAt(0) < 128 ? ch : "\\U+" + ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")).join("");
+    const pair = (c, v) => out.push(String(c), typeof v === "number" && !Number.isInteger(v) ? v.toFixed(4) : esc(v));
+    const num = (c, v) => out.push(String(c), v.toFixed(4));
+    const line = (l, a, b) => { pair(0, "LINE"); pair(8, l); num(10, a[0]); num(20, a[1]); num(30, 0); num(11, b[0]); num(21, b[1]); num(31, 0); };
+    pair(0, "SECTION"); pair(2, "HEADER"); pair(9, "$ACADVER"); pair(1, "AC1009"); pair(9, "$INSUNITS"); pair(70, 6); pair(0, "ENDSEC");
+    pair(0, "SECTION"); pair(2, "TABLES");
+    pair(0, "TABLE"); pair(2, "LTYPE"); pair(70, 1); pair(0, "LTYPE"); pair(2, "CONTINUOUS"); pair(70, 0); pair(3, "Solid line"); pair(72, 65); pair(73, 0); num(40, 0); pair(0, "ENDTAB");
+    const layers = [["MUROS", 7], ["HUECOS", 30], ["COTAS", 8], ["TEXTOS", 7]];
+    pair(0, "TABLE"); pair(2, "LAYER"); pair(70, layers.length);
+    for (const [n, c] of layers) { pair(0, "LAYER"); pair(2, n); pair(70, 0); pair(62, c); pair(6, "CONTINUOUS"); }
+    pair(0, "ENDTAB"); pair(0, "ENDSEC");
+    pair(0, "SECTION"); pair(2, "ENTITIES");
+    walls.forEach((w, i) => {
+      for (const [u, v] of solids(i)) line("MUROS", at(w, u), at(w, v));
+      for (const o of openings.filter(o => o.w === i)) {
+        const pa = at(w, o.a), pb = at(w, o.b), inward = [-w.n[0], -w.n[1]];
+        if (o.kind === "window") line("HUECOS", pa, pb);
+        if (o.kind === "door") {
+          const r = o.b - o.a; line("HUECOS", pa, add(pa, inward, r));
+          const leaf = Math.atan2(inward[1], inward[0]) * 180 / Math.PI, closed = Math.atan2(w.d[1], w.d[0]) * 180 / Math.PI;
+          const ccw = inward[0] * w.d[1] - inward[1] * w.d[0] > 0;
+          pair(0, "ARC"); pair(8, "HUECOS"); num(10, pa[0]); num(20, pa[1]); num(30, 0); num(40, r); num(50, ccw ? leaf : closed); num(51, ccw ? closed : leaf);
+        }
+      }
+      let ang = Math.atan2(w.d[1], w.d[0]) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang <= -90) ang += 180;
+      const p = add(add(w.p, w.d, w.L / 2), [-w.n[0], -w.n[1]], 0.25);
+      pair(0, "TEXT"); pair(8, "COTAS"); num(10, p[0]); num(20, p[1]); num(30, 0); num(40, 0.08); pair(1, fmt(w.L)); num(50, ang); pair(72, 1); pair(73, 2); num(11, p[0]); num(21, p[1]); num(31, 0);
+    });
+    pair(0, "TEXT"); pair(8, "TEXTOS"); num(10, W / 2); num(20, D / 2); num(30, 0); num(40, 0.15); pair(1, "SALÓN"); num(50, 0); pair(72, 1); pair(73, 2); num(11, W / 2); num(21, D / 2); num(31, 0);
+    pair(0, "ENDSEC"); pair(0, "EOF");
+    return out.join("\n") + "\n";
+  }
+
+  // ---------- Ajustes ----------
+  $$("[data-unit]").forEach(b => b.addEventListener("click", () => {
+    state.unit = b.dataset.unit;
+    $$("[data-unit]").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+  }));
+  $$("[data-step]").forEach(b => b.addEventListener("click", () => {
+    const d = +b.dataset.d;
+    if (b.dataset.step === "tol") { state.tol = Math.min(10, Math.max(0, state.tol + d)); $("#tol").textContent = state.tol.toFixed(1).replace(".", ",") + "°"; }
+    else { state.thk = Math.min(0.5, Math.max(0.05, +(state.thk + d).toFixed(2))); $("#thk").textContent = state.thk.toFixed(2).replace(".", ",") + " m"; drawThumb(); }
+  }));
+
+  // ---------- Enlaces de navegación ----------
+  document.addEventListener("click", (e) => {
+    const g = e.target.closest("[data-go]");
+    if (g) { e.preventDefault(); go(g.dataset.go); return; }
+    if (e.target.closest("[data-back]")) back();
+  });
+  $("#finish").addEventListener("click", () => go("process", { replace: true }));
+
+  // ---------- Arranque ----------
+  drawThumb();
+  $$(".screen").forEach(s => s.hidden = true);
+  $("#projects").hidden = false; current = "projects";
+  playIntro();
+})();
+</script>
+</body>
+</html>
