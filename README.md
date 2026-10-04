@@ -10,6 +10,9 @@ todo se procesa en el móvil y en tu ordenador.
 | Procesador de escritorio | [`processor/`](processor) | Python 3.11, ezdxf (IfcOpenShell en semana 5-6) |
 | Contrato entre ambas | [`docs/FORMATO_PLANO.md`](docs/FORMATO_PLANO.md) | paquete `.plano` (ZIP) |
 
+Prototipo web navegable (6 pantallas y secuencias de motion): [`web/index.html`](web/index.html),
+publicado con GitHub Pages por el workflow `pages.yml`.
+
 Documentación: [brief](docs/BRIEF.md) · [plan y estado](docs/PLAN.md) · [diseño y motion](docs/DISENO.md).
 
 ## Estado: entrega semana 1-2
@@ -17,7 +20,7 @@ Documentación: [brief](docs/BRIEF.md) · [plan y estado](docs/PLAN.md) · [dise
 - **App iOS:** captura por estancia con RoomPlan sobre `ARSession` propia, fotos de alta
   resolución con pose, intrínsecos y profundidad, malla PLY, varias estancias en la misma
   sesión, paquete `.plano`, DXF rápido en el móvil, las 6 pantallas y la intro animada.
-  **Pendiente de compilar y probar en un iPhone real** (ver lista en [PLAN](docs/PLAN.md#verificar-en-dispositivo)).
+  Compila en CI (Xcode 16.4); **pendiente de probar en un iPhone real** (ver lista en [PLAN](docs/PLAN.md#verificar-en-dispositivo)).
 - **Procesador:** lee `.plano`, ortogonaliza (tolerancia 3°), cierra esquinas con inglete,
   da grosor a los muros y exporta **DXF** con capas `MUROS`, `HUECOS`, `COTAS`, `TEXTOS`.
   Probado con un paquete sintético (`plano sample`).

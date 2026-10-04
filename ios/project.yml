@@ -37,6 +37,7 @@ targets:
         UILaunchScreen:
           UIColorName: ""
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIRequiresFullScreen: true
         UIAppFonts: [SpaceGrotesk.ttf, JetBrainsMono.ttf]
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: false
