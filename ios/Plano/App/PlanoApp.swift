@@ -2,9 +2,19 @@ import SwiftUI
 
 @main
 struct PlanoApp: App {
-    @StateObject private var store = ProjectStore()
+    @StateObject private var store: ProjectStore
     @StateObject private var settings = AppSettings()
     @StateObject private var router = Router()
+
+    init() {
+        #if DEBUG
+        if DemoData.isUITest {
+            _store = StateObject(wrappedValue: DemoData.makeStore())
+            return
+        }
+        #endif
+        _store = StateObject(wrappedValue: ProjectStore())
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -59,10 +69,16 @@ struct RootView: View {
     var body: some View {
         ZStack {
             Color.planoBackground.ignoresSafeArea()
+            // Las pantallas tapadas se ocultan a VoiceOver y no reciben toques.
             ProjectsView()
+                .accessibilityHidden(!router.stack.isEmpty)
+                .allowsHitTesting(router.stack.isEmpty)
             ForEach(Array(router.stack.enumerated()), id: \.element) { index, route in
+                let isTop = index == router.stack.count - 1
                 screen(for: route)
                     .background(Color.planoBackground.ignoresSafeArea())
+                    .accessibilityHidden(!isTop)
+                    .allowsHitTesting(isTop)
                     .transition(reduceMotion ? .opacity : .maskSlide)
                     .zIndex(Double(index + 1))
             }

@@ -42,9 +42,11 @@ struct ExportView: View {
                         if let packageURL {
                             ShareLink(item: packageURL) { Text("Enviar .plano") }
                                 .buttonStyle(PlanoButtonStyle())
+                                .accessibilityIdentifier("sharePackage")
                         } else {
                             Button(working ? "Generando…" : "Generar .plano") { exportPackage() }
                                 .buttonStyle(PlanoButtonStyle())
+                                .accessibilityIdentifier("generatePackage")
                                 .disabled(working)
                         }
                     }
@@ -56,6 +58,7 @@ struct ExportView: View {
                         } else {
                             Button("Generar DXF") { exportDXF() }
                                 .buttonStyle(PlanoButtonStyle(prominent: false))
+                                .accessibilityIdentifier("generateDXF")
                         }
                     }
 
