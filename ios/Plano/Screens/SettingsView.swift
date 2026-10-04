@@ -22,10 +22,10 @@ struct SettingsView: View {
 
                 Section {
                     Stepper(value: $settings.orthoTolerance, in: 0...10, step: 0.5) {
-                        row("Tolerancia 90°", String(format: "%.1f°", settings.orthoTolerance))
+                        row("Tolerancia 90°", "\(num(settings.orthoTolerance, 1))°")
                     }
                     Stepper(value: $settings.wallThickness, in: 0.05...0.50, step: 0.01) {
-                        row("Grosor de muro", String(format: "%.2f m", settings.wallThickness))
+                        row("Grosor de muro", "\(num(settings.wallThickness, 2)) m")
                     }
                 } header: {
                     Text("Plano")
@@ -36,13 +36,13 @@ struct SettingsView: View {
                 Section {
                     Toggle("Malla y profundidad ampliadas (experimental)", isOn: $settings.enhancedAR)
                     Stepper(value: $settings.frameInterval, in: 0.2...3, step: 0.1) {
-                        row("Intervalo mínimo", String(format: "%.1f s", settings.frameInterval))
+                        row("Intervalo mínimo", "\(num(settings.frameInterval, 1)) s")
                     }
                     Stepper(value: $settings.frameDistance, in: 0.1...1, step: 0.05) {
-                        row("Desplazamiento", String(format: "%.2f m", settings.frameDistance))
+                        row("Desplazamiento", "\(num(settings.frameDistance, 2)) m")
                     }
                     Stepper(value: $settings.frameAngle, in: 5...45, step: 5) {
-                        row("Giro", String(format: "%.0f°", settings.frameAngle))
+                        row("Giro", "\(num(settings.frameAngle, 0))°")
                     }
                 } header: {
                     Text("Captura")
@@ -52,13 +52,13 @@ struct SettingsView: View {
 
                 Section {
                     if let summary = settings.calibrationSummary {
-                        row("Error medio", String(format: "±%.1f cm", summary.mean * 100))
-                        row("Error máximo", String(format: "±%.1f cm", summary.max * 100))
+                        row("Error medio", "±\(num(summary.mean * 100, 1)) cm")
+                        row("Error máximo", "±\(num(summary.max * 100, 1)) cm")
                         row("Objetivo", "±2,0 cm")
                     }
                     ForEach(settings.calibration) { sample in
-                        row(String(format: "Láser %.3f m", sample.laser),
-                            String(format: "%+.1f cm", sample.error * 100))
+                        row("Láser \(num(sample.laser, 3)) m",
+                            "\(signed(sample.error * 100, 1)) cm")
                     }
                     .onDelete { settings.calibration.remove(atOffsets: $0) }
                     HStack {
@@ -89,6 +89,15 @@ struct SettingsView: View {
             Spacer()
             Text(value).planoMono(TypeScale.body).foregroundStyle(Color.planoSecondary)
         }
+    }
+
+    /// Número con los decimales indicados y el separador del idioma ("3,0" en español).
+    private func num(_ value: Double, _ decimals: Int) -> String {
+        value.formatted(.number.precision(.fractionLength(decimals)))
+    }
+
+    private func signed(_ value: Double, _ decimals: Int) -> String {
+        value.formatted(.number.precision(.fractionLength(decimals)).sign(strategy: .always()))
     }
 
     private func parse(_ text: String) -> Double? {

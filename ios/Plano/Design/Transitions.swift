@@ -51,6 +51,7 @@ struct ScreenHeader<Trailing: View>: View {
                         .frame(width: 44, height: 44, alignment: .leading)
                 }
                 .accessibilityLabel("Volver")
+                .accessibilityIdentifier("back")
             }
             Text(title)
                 .planoTitle(TypeScale.body)

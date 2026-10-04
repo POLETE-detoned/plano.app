@@ -2,9 +2,19 @@ import SwiftUI
 
 @main
 struct PlanoApp: App {
-    @StateObject private var store = ProjectStore()
+    @StateObject private var store: ProjectStore
     @StateObject private var settings = AppSettings()
     @StateObject private var router = Router()
+
+    init() {
+        #if DEBUG
+        if DemoData.isUITest {
+            _store = StateObject(wrappedValue: DemoData.makeStore())
+            return
+        }
+        #endif
+        _store = StateObject(wrappedValue: ProjectStore())
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -59,12 +69,17 @@ struct RootView: View {
     var body: some View {
         ZStack {
             Color.planoBackground.ignoresSafeArea()
-            ProjectsView()
-            ForEach(Array(router.stack.enumerated()), id: \.element) { index, route in
-                screen(for: route)
+            // Solo existe la pantalla visible: las de debajo no deben recibir toques ni
+            // aparecer en VoiceOver. Al volver atrás, la anterior se crea de nuevo.
+            if let top = router.stack.last {
+                screen(for: top)
+                    .id(top)
                     .background(Color.planoBackground.ignoresSafeArea())
                     .transition(reduceMotion ? .opacity : .maskSlide)
-                    .zIndex(Double(index + 1))
+                    .zIndex(1)
+            } else {
+                ProjectsView()
+                    .transition(.opacity)
             }
             if showIntro && !settings.introSeen {
                 IntroView {

@@ -20,6 +20,7 @@ struct ProjectsView: View {
                         .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Ajustes")
+                .accessibilityIdentifier("settingsButton")
             }
             .padding(.horizontal, Grid.margin)
             .padding(.top, Grid.u(2))
@@ -35,6 +36,7 @@ struct ProjectsView: View {
                                 ProjectRow(project: project, plan: store.plans[project.id])
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("projectRow")
                             .opacity(appeared ? 1 : 0)
                             .offset(y: appeared || reduceMotion ? 0 : Grid.u(3))
                             .animation(reduceMotion ? Motion.reduced : Motion.staggered(index), value: appeared)
@@ -56,6 +58,7 @@ struct ProjectsView: View {
                 naming = true
             }
             .buttonStyle(PlanoButtonStyle())
+            .accessibilityIdentifier("newScan")
             .padding(.horizontal, Grid.margin)
             .padding(.bottom, Grid.u(2))
         }

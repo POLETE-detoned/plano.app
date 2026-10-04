@@ -2,9 +2,10 @@ name: ios
 
 on:
   push:
-    paths: ["ios/**", ".github/workflows/ios.yml"]
+    paths: ["ios/**", "processor/**", ".github/workflows/ios.yml"]
   pull_request:
-    paths: ["ios/**", ".github/workflows/ios.yml"]
+    paths: ["ios/**", "processor/**", ".github/workflows/ios.yml"]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -22,3 +23,80 @@ jobs:
             -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO build | tail -n 200
           exit ${PIPESTATUS[0]}
+
+  # Pruebas en el simulador (sin LiDAR: RoomPlan no funciona; se usan datos de demostración).
+  # Deja como artefacto "capturas": una imagen de cada pantalla, el .plano que genera la app
+  # y el DXF que saca de él el procesador Python.
+  simulator:
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar herramientas
+        run: |
+          brew install xcodegen
+          pip install -e 'processor[dev]' matplotlib
+      - name: Generar proyecto
+        working-directory: ios
+        run: xcodegen
+      - name: Tests en el simulador
+        working-directory: ios
+        env:
+          TEST_RUNNER_PLANO_TEST_OUTPUT: ${{ runner.temp }}/salida
+        run: |
+          set -o pipefail
+          DEVICE=$(xcrun simctl list devices available | grep -Eo 'iPhone 1[0-9] Pro \(' | head -1 | sed 's/ ($//')
+          echo "Simulador: $DEVICE"
+          xcodebuild test -project Plano.xcodeproj -scheme Plano \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
+            -resultBundlePath "$RUNNER_TEMP/Resultados.xcresult" \
+            CODE_SIGNING_ALLOWED=NO | tail -n 120
+      - name: Extraer capturas
+        if: always()
+        run: |
+          mkdir -p capturas
+          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/Resultados.xcresult" --output-path capturas || true
+          # Renombrar con el nombre de cada adjunto (01-intro.png, …)
+          if [ -f capturas/manifest.json ]; then
+            python3 - <<'PY'
+          import json, os
+          m = json.load(open("capturas/manifest.json"))
+          for test in m:
+              for a in test.get("attachments", []):
+                  src = os.path.join("capturas", a["exportedFileName"])
+                  name = a.get("suggestedHumanReadableName", a["exportedFileName"]).split("_0_")[0]
+                  ext = os.path.splitext(src)[1]
+                  if os.path.exists(src):
+                      os.replace(src, os.path.join("capturas", name + ext))
+          PY
+          fi
+          ls -la capturas
+      - name: Procesar el .plano de la app con el procesador
+        if: always()
+        run: |
+          OUT="$RUNNER_TEMP/salida"
+          ls -la "$OUT" || exit 0
+          cp "$OUT"/* capturas/ 2>/dev/null || true
+          plano info "$OUT/demo.plano" | tee capturas/plano-info.txt
+          plano dxf "$OUT/demo.plano" -o capturas/demo-procesado.dxf
+          python -m ezdxf draw -o capturas/demo-procesado.png capturas/demo-procesado.dxf
+          python -m ezdxf draw -o capturas/rapido.png "$OUT/rapido.dxf"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capturas
+          path: capturas
+      - name: Publicar capturas en la rama ci-capturas
+        if: always() && github.event_name != 'pull_request'
+        run: |
+          cd capturas
+          git init -q -b ci-capturas
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "Capturas del simulador (${GITHUB_SHA::7})"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-capturas

@@ -18,7 +18,9 @@ targets:
     platform: iOS
     sources:
       - path: Plano
-    scheme: {} # esquema compartido (necesario para xcodebuild en CI)
+    scheme: # esquema compartido (necesario para xcodebuild en CI)
+      testTargets: [PlanoTests, PlanoUITests]
+      gatherCoverageData: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.plano.Plano
@@ -47,3 +49,25 @@ targets:
             UTTypeConformsTo: [public.zip-archive, public.data]
             UTTypeTagSpecification:
               public.filename-extension: [plano]
+
+  PlanoTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [PlanoTests]
+    dependencies:
+      - target: Plano
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.plano.PlanoTests
+
+  PlanoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [PlanoUITests]
+    dependencies:
+      - target: Plano
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.plano.PlanoUITests

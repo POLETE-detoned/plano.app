@@ -83,8 +83,10 @@ struct ReviewView: View {
             HStack(spacing: Grid.u(1)) {
                 Button("Añadir estancia") { router.push(.scan(projectId)) }
                     .buttonStyle(PlanoButtonStyle(prominent: false))
+                    .accessibilityIdentifier("addRoom")
                 Button("Exportar") { router.push(.export(projectId)) }
                     .buttonStyle(PlanoButtonStyle())
+                    .accessibilityIdentifier("exportButton")
                     .disabled(project?.rooms.isEmpty ?? true)
             }
         }

@@ -125,6 +125,13 @@ final class ProjectStore: ObservableObject {
         plans[project.id] = plan
     }
 
+    /// Guarda una planta 2D ya construida (datos de demostración y pruebas).
+    func savePlan(_ plan: FloorPlan2D, for project: Project) throws {
+        try Self.encoder.encode(plan).write(
+            to: directory(for: project).appendingPathComponent("plan.json"), options: .atomic)
+        plans[project.id] = plan
+    }
+
     func updateFrameCount(_ count: Int, for projectId: UUID) {
         guard var project = project(id: projectId) else { return }
         project.frameCount = count
