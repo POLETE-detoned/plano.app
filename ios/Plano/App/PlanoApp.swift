@@ -69,18 +69,17 @@ struct RootView: View {
     var body: some View {
         ZStack {
             Color.planoBackground.ignoresSafeArea()
-            // Las pantallas tapadas se ocultan a VoiceOver y no reciben toques.
-            ProjectsView()
-                .accessibilityHidden(!router.stack.isEmpty)
-                .allowsHitTesting(router.stack.isEmpty)
-            ForEach(Array(router.stack.enumerated()), id: \.element) { index, route in
-                let isTop = index == router.stack.count - 1
-                screen(for: route)
+            // Solo existe la pantalla visible: las de debajo no deben recibir toques ni
+            // aparecer en VoiceOver. Al volver atrás, la anterior se crea de nuevo.
+            if let top = router.stack.last {
+                screen(for: top)
+                    .id(top)
                     .background(Color.planoBackground.ignoresSafeArea())
-                    .accessibilityHidden(!isTop)
-                    .allowsHitTesting(isTop)
                     .transition(reduceMotion ? .opacity : .maskSlide)
-                    .zIndex(Double(index + 1))
+                    .zIndex(1)
+            } else {
+                ProjectsView()
+                    .transition(.opacity)
             }
             if showIntro && !settings.introSeen {
                 IntroView {

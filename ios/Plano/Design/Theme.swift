@@ -139,6 +139,8 @@ struct PlanoButtonStyle: ButtonStyle {
             .font(PlanoFont.grotesk(TypeScale.body))
             .tracking(TypeScale.tracking(TypeScale.body))
             .textCase(.uppercase)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .padding(.vertical, Grid.u(2))
             .padding(.horizontal, Grid.u(3))
             .frame(maxWidth: .infinity)

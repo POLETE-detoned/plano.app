@@ -7,7 +7,8 @@ final class PlanoUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = true
         app = XCUIApplication()
-        app.launchArguments = ["-uiTestDemo", "-introSeen", "NO"]
+        app.launchArguments = ["-uiTestDemo", "-introSeen", "NO",
+                               "-AppleLanguages", "(es)", "-AppleLocale", "es_ES"]
         app.launch()
     }
 
@@ -46,6 +47,7 @@ final class PlanoUITests: XCTestCase {
                       "en el simulador debería avisar de que no hay LiDAR")
 
         app.buttons["back"].firstMatch.tap() // a Revisión
+        XCTAssertTrue(app.buttons["exportButton"].waitForExistence(timeout: 5))
         app.buttons["back"].firstMatch.tap() // a Proyectos
         let settings = app.buttons["settingsButton"]
         XCTAssertTrue(settings.waitForExistence(timeout: 5))
