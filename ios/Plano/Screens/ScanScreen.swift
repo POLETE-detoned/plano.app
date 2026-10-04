@@ -55,6 +55,7 @@ private struct ScanContent: View {
         }
         .background(Color(Palette.ink).ignoresSafeArea())
         .foregroundStyle(Color(Palette.paper))
+        .onAppear { controller.begin() }
         .onDisappear { controller.tearDown() }
     }
 
@@ -112,12 +113,18 @@ private struct ScanContent: View {
         VStack(spacing: Grid.u(1)) {
             switch controller.phase {
             case .ready:
-                TextField("Nombre de la estancia", text: $controller.roomName)
-                    .textFieldStyle(.plain)
-                    .padding(Grid.u(2))
-                    .overlay(Rectangle().stroke(Color(Palette.paper).opacity(0.4)))
-                Button("Empezar estancia") { controller.startRoom() }
+                Button("Empezar estancia") { controller.begin() }
                     .buttonStyle(PlanoButtonStyle())
+            case .cameraDenied:
+                Text("Plano no tiene permiso para usar la cámara. Actívalo en Ajustes › Plano › Cámara.")
+                    .planoMono(TypeScale.caption)
+                    .multilineTextAlignment(.center)
+                Button("Abrir Ajustes") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                }
+                .buttonStyle(PlanoButtonStyle())
+                Button("Reintentar") { controller.begin() }
+                    .buttonStyle(PlanoButtonStyle(prominent: false))
             case .scanning:
                 Button("Terminar estancia") { controller.finishRoom() }
                     .buttonStyle(PlanoButtonStyle())
@@ -129,6 +136,10 @@ private struct ScanContent: View {
                 .frame(maxWidth: .infinity)
                 .padding(Grid.u(2))
             case .reviewing:
+                TextField("Nombre de la estancia", text: $controller.roomName)
+                    .textFieldStyle(.plain)
+                    .padding(Grid.u(2))
+                    .overlay(Rectangle().stroke(Color(Palette.paper).opacity(0.4)))
                 Button("Guardar estancia") { controller.saveRoom() }
                     .buttonStyle(PlanoButtonStyle())
                 Button("Descartar") { controller.discardRoom() }
@@ -136,7 +147,7 @@ private struct ScanContent: View {
             case .saved:
                 Text("\(controller.roomsSaved) ESTANCIA\(controller.roomsSaved == 1 ? "" : "S") GUARDADA\(controller.roomsSaved == 1 ? "" : "S")")
                     .planoMono(TypeScale.caption)
-                Button("Siguiente estancia") { controller.startRoom() }
+                Button("Siguiente estancia") { controller.begin() }
                     .buttonStyle(PlanoButtonStyle())
                 Button("Listo") { router.replaceTop(with: .review(projectId)) }
                     .buttonStyle(PlanoButtonStyle(prominent: false))

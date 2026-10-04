@@ -55,7 +55,7 @@ final class AppSettings: ObservableObject {
             "units": LengthUnit.meters.rawValue,
             "orthoTolerance": 3.0,
             "wallThickness": 0.10,
-            "enhancedAR": true,
+            "enhancedAR": false,
             "frameInterval": 0.5,
             "frameDistance": 0.30,
             "frameAngle": 20.0,
