@@ -1,0 +1,8 @@
+Proyecto: Vivienda demo
+Formato:  plano v1  ·  app 0.1.0
+Fotogramas: 0  ·  malla: —
+  · Salón: 4 muros (14.60 m), 1 puertas, 1 ventanas, 1 huecos
+      muro 8B2A06F2   4.200 m  ·     0.00°
+      muro C13D55B7   3.100 m  ·    90.00°
+      muro 24815C7B   4.200 m  ·   180.00°
+      muro 3E9843AE   3.100 m  ·   -90.00°
