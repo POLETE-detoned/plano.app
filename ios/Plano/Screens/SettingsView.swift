@@ -34,7 +34,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("Malla y profundidad ampliadas", isOn: $settings.enhancedAR)
+                    Toggle("Malla y profundidad ampliadas (experimental)", isOn: $settings.enhancedAR)
                     Stepper(value: $settings.frameInterval, in: 0.2...3, step: 0.1) {
                         row("Intervalo mínimo", String(format: "%.1f s", settings.frameInterval))
                     }
@@ -47,7 +47,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Captura")
                 } footer: {
-                    Text("Se guarda una foto de 48 MP cuando pasa el intervalo y el móvil se ha movido o girado lo indicado. Si RoomPlan se comporta de forma extraña, desactiva la malla ampliada.")
+                    Text("Se guarda una foto de 48 MP cuando pasa el intervalo y el móvil se ha movido o girado lo indicado. La malla ampliada relanza la sesión de RoomPlan y puede congelar la cámara: déjala apagada salvo para probar.")
                 }
 
                 Section {

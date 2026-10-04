@@ -33,8 +33,8 @@
 Este código se escribió sin Xcode (entorno Linux). Antes de dar la semana 1-2 por cerrada:
 
 1. `xcodegen && xcodebuild` compila sin errores (lo comprueba también el workflow `ios.yml`).
-2. RoomPlan sigue funcionando tras `enhanceARConfiguration()`. Si la sesión se reinicia o
-   la guía se bloquea, desactivar "Malla y profundidad ampliadas" y anotar el resultado.
+2. Con "Malla y profundidad ampliadas (experimental)" activado, RoomPlan sigue funcionando
+   tras `enhanceARConfiguration()`. Si la cámara se congela, dejarlo apagado.
 3. Resolución real de `captureHighResolutionFrame` (¿48 MP con el formato recomendado?).
 4. `frames/*.depth` tiene 256×192 float32 y valores en metros.
 5. El JSON de `CapturedRoom` guardado lo lee `plano info` (formato de `transform`).
@@ -51,6 +51,12 @@ Este código se escribió sin Xcode (entorno Linux). Antes de dar la semana 1-2 
 - **Profundidad:** la foto de alta resolución no trae profundidad; se guarda la del
   `ARFrame` más reciente con su propia pose e intrínsecos (documentado en el formato).
 - **Grosor de muro:** RoomPlan no lo mide; 10 cm por defecto, hacia fuera de la estancia.
+- **Cámara al entrar:** la pantalla de escaneo pide permiso y arranca RoomPlan nada más
+  abrirse; el nombre de la estancia se pone al guardarla. Si falta el permiso, se explica
+  y hay un botón a Ajustes.
+- **Configuración AR ampliada apagada por defecto:** relanzar la `ARSession` mientras
+  RoomPlan la usa (sobre todo cambiando el formato de vídeo) puede dejar la cámara congelada.
+  Queda como opción experimental, ya sin tocar el formato de vídeo.
 - **Navegación propia** en lugar de `NavigationStack` para poder hacer la transición con
   máscara y speed ramp del brief.
 

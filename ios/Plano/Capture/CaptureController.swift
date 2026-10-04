@@ -1,4 +1,5 @@
 import ARKit
+import AVFoundation
 import RoomPlan
 import SwiftUI
 
@@ -14,6 +15,7 @@ final class CaptureController: NSObject, ObservableObject, RoomCaptureViewDelega
         case processing // RoomPlan generando el resultado
         case reviewing // resultado listo para guardar
         case saved
+        case cameraDenied // sin permiso de cámara
         case failed(String)
     }
 
@@ -59,7 +61,25 @@ final class CaptureController: NSObject, ObservableObject, RoomCaptureViewDelega
 
     // MARK: - Ciclo de vida
 
-    func startRoom() {
+    /// Abre la cámara y empieza a escanear en cuanto hay permiso. Se llama al entrar en la
+    /// pantalla, así que la cámara arranca sin pasos previos.
+    func begin() {
+        guard phase == .ready || phase == .saved || phase == .cameraDenied else { return }
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            startRoom()
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted { self.startRoom() } else { self.phase = .cameraDenied }
+                }
+            }
+        default:
+            phase = .cameraDenied
+        }
+    }
+
+    private func startRoom() {
         guard let project else { return }
         if roomName.trimmingCharacters(in: .whitespaces).isEmpty {
             roomName = "Estancia \(project.rooms.count + 1)"
@@ -142,8 +162,9 @@ final class CaptureController: NSObject, ObservableObject, RoomCaptureViewDelega
         self.recorder = nil
     }
 
-    /// Añade malla clasificada, profundidad y formato de vídeo de alta resolución a la
-    /// configuración que ha puesto RoomPlan. Se puede desactivar en Ajustes si da problemas.
+    /// Experimental (apagado por defecto): añade malla clasificada y profundidad a la
+    /// configuración que ha puesto RoomPlan. Relanzar la sesión AR mientras RoomPlan la usa
+    /// puede congelar la cámara; no se toca el formato de vídeo por ese motivo.
     private func enhanceARConfiguration() {
         guard phase == .scanning,
               let current = arSession.configuration as? ARWorldTrackingConfiguration,
@@ -160,11 +181,6 @@ final class CaptureController: NSObject, ObservableObject, RoomCaptureViewDelega
             configuration.frameSemantics.insert(semantic)
             changed = true
         }
-        if let format = ARWorldTrackingConfiguration.recommendedVideoFormatForHighResolutionFrameCapturing,
-           configuration.videoFormat != format {
-            configuration.videoFormat = format
-            changed = true
-        }
         if changed { arSession.run(configuration) } // sin opciones: conserva el tracking y las anclas
     }
 
@@ -176,6 +192,14 @@ final class CaptureController: NSObject, ObservableObject, RoomCaptureViewDelega
             self.doorCount = room.doors.count
             self.windowCount = room.windows.count
             self.openingCount = room.openings.count
+        }
+    }
+
+    func captureSession(_ session: RoomCaptureSession, didEndWith data: CapturedRoomData, error: Error?) {
+        guard let error else { return }
+        DispatchQueue.main.async {
+            self.stopRecorder()
+            self.phase = .failed("El escaneo se ha detenido: \(error.localizedDescription)")
         }
     }
 
